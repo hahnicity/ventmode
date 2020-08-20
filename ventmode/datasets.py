@@ -282,10 +282,14 @@ class VFinalFeatureSet(V1FeatureSet):
                 frame_dur = vwd['frame_dur']
                 rel_bn = breath[0]
                 vent_bn = breath[1]
-                try:
+                if re.search(r'\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2}.\d{6}', breath[29]):
                     abs_bs = pd.to_datetime(breath[29], format='%Y-%m-%d %H-%M-%S.%f')
-                except:
+                elif re.search(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.\d{6}', breath[29]):
                     abs_bs = pd.to_datetime(breath[29], format='%Y-%m-%d %H:%M:%S.%f')
+                elif re.search(r'\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}.\d{6}', breath[29]):
+                    abs_bs = pd.to_datetime(breath[29], format='%Y-%m-%d-%H-%M-%S.%f')
+                else:
+                    raise Exception('unable to parse format of datetime {}'.format(breath[29]))
                 itime = breath[6]
                 etime = breath[7]
                 tvi = breath[9]
