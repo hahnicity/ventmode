@@ -818,6 +818,19 @@ def run_dataset_with_classifier(cls, scaler, dataset, feature_set):
     return dataset
 
 
+def run_dataset_with_classifier_and_lookahead(cls,
+                                              scaler,
+                                              dataset,
+                                              feature_set,
+                                              window_len,
+                                              confidence_frac):
+    dataset = run_dataset_with_classifier(cls, scaler, dataset, feature_set)
+    dataset['predictions'] = perform_lookahead_confidence_window(
+        dataset.predictions, dataset.patient, window_len, confidence_frac
+    )
+    return dataset
+
+
 def run_with_pickled_classifiers(cls_path, scaler_path, dataset_path, feature_set):
     df = pd.read_pickle(dataset_path)
     cls = pickle.load(open(cls_path))

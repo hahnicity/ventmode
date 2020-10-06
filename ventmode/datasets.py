@@ -10,6 +10,7 @@ in some documentation.
 """
 import csv
 from glob import glob
+from io import open
 import math
 import os
 from os.path import basename
@@ -220,17 +221,13 @@ class VFinalFeatureSet(V1FeatureSet):
         self.f_idxs_back = int(.04 / .02)
         self.point_diffs = 4
         # Drop breaths if they have < 10 points in their insp flow slice
-        #
-        # XXX Should we allow the algorithm the flexibility to utilize missing data?
-        # Want to have at least 3 values so that we can take a flow slope variance
         self.drop_len = self.point_diffs + 3
         self.patient_pattern = patient_pattern
 
     def extract_breath_info(self, filename, spec_rel_bns):
-        with open(filename, 'rU') as f:
+        with open(filename, encoding='ascii', errors='ignore') as f:
             f = clear_descriptor_null_bytes(f)
             first_line = f.readline()
-            bs_col, ncol, ts_1st_col, ts_1st_row = detect_version_v2(first_line)
             f.seek(0)
             return list(extract_raw(f, False, spec_rel_bns=spec_rel_bns))
 
@@ -239,6 +236,7 @@ class VFinalFeatureSet(V1FeatureSet):
         all_breath_vwd = dict()
         all_breath_metadata = dict()
         for patient, filename in self.fileset['x']:
+
             if not filename in all_breath_metadata:
                 all_breath_metadata[filename] = []
             if tor_results is None:
@@ -274,8 +272,13 @@ class VFinalFeatureSet(V1FeatureSet):
 
             all_breath_vwd[filename] = pt_vwd
             pt_array = []
+            vwd_remove_idxs = []
             for idx, vwd in enumerate(pt_vwd):
                 if not vwd:
+                    vwd_remove_idxs.append(idx)
+                    continue
+                if len(vwd['pressure']) == 0 or len(vwd['flow']) == 0:
+                    vwd_remove_idxs.append(idx)
                     continue
                 breath = get_production_breath_meta(vwd)
                 all_breath_metadata[filename].append(breath)
@@ -332,10 +335,10 @@ class VFinalFeatureSet(V1FeatureSet):
                     median_pip, median_peep, pressure_itime = np.nan, np.nan, np.nan
                     pressure_itime_dot5, pressure_itime_dot6, pressure_itime_dot65, pressure_itime_dot7 = np.nan, np.nan, np.nan, np.nan
                 else:
+                    if 't' not in vwd:
+                        vwd['t'] = np.arange(0, len(vwd['pressure'])*0.02, 0.02)
                     min_idx = 0 if idx + 1 - self.var_window_max < 0 else idx + 1 - self.var_window_max
                     slice = pt_array[min_idx:idx+1]
-                    # XXX I think this is actually pretty bugged. But somehow it works??
-                    #
                     # Yea. because whatever you did with the model ended up being
                     # predictive of cpap because this is pretty high in cpap. And also
                     # because this was probably all tuned to what you wanted it to
@@ -363,6 +366,11 @@ class VFinalFeatureSet(V1FeatureSet):
                     'pressure_itime_.65': pressure_itime_dot65,
                     'pressure_itime_.7': pressure_itime_dot7,
                 })
+            if vwd_remove_idxs:
+                all_breath_vwd[filename] = [
+                    b for i, b in enumerate(all_breath_vwd[filename])
+                    if i not in vwd_remove_idxs
+                ]
 
             # calculate extra-breath features
             for idx, row in enumerate(pt_array):
@@ -480,6 +488,8 @@ class VFinalFeatureSet(V1FeatureSet):
         """
         Extract features from raw VWD on a per-breath basis
         """
+        if len(df) == 0:
+            raise Exception('no rows in dataframe. something went wrong')
         flow_var = []
         all_pressure_var = []
         pressure_var = []
@@ -519,7 +529,6 @@ class VFinalFeatureSet(V1FeatureSet):
                 flow = breath['flow']
                 pressure = breath['pressure']
                 patient_x0_minus_arr.append(flow[x0_idx-1])
-
                 f_slice = flow[self.f_idxs_front:(x0_idx - self.f_idxs_back)]
                 p_slice = flow[self.f_idxs_front:(x0_idx - self.f_idxs_back)]
                 # just drop breaths that have too few points
