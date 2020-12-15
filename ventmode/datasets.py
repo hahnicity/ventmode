@@ -384,7 +384,7 @@ class VFinalFeatureSet(V1FeatureSet):
                     pressure_slice = map(lambda x: x['pressure_itime'], slice)
                     max_pressure_slice = map(lambda x: x['pressure_itime'], slice_max)
                     pressure_itime_var = var(filter(lambda x: x if x is not np.nan else None, pressure_slice))
-                    pressure_itime_var_longer = var(filter(lambda x: x if x is not np.nan else None, pressure_slice))
+                    pressure_itime_var_longer = var(filter(lambda x: x if x is not np.nan else None, max_pressure_slice))
                     itime_var_longer = var(map(lambda x: x['itime'], slice_max))
                 pt_array[idx].update({
                     'tvi_var': tvi_var,
