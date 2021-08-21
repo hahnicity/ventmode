@@ -251,7 +251,7 @@ class VFinalFeatureSet(V1FeatureSet):
             try:
                 pt_vwd = self.extract_breath_info(filename, spec_rel_bns)
             except Exception as err:
-                print "Error in runtime:\n\n{}\n\nskip file: {}".format(traceback.format_exc(), filename)
+                print("Error in runtime:\n\n{}\n\nskip file: {}".format(traceback.format_exc(), filename))
                 continue
 
             if random_thresh:
@@ -343,8 +343,8 @@ class VFinalFeatureSet(V1FeatureSet):
                     # predictive of cpap because this is pretty high in cpap. And also
                     # because this was probably all tuned to what you wanted it to
                     # be with maw and ipauc
-                    median_pip = np.median(map(lambda x: x['pip'], slice))
-                    median_peep = np.median(map(lambda x: x['peep'], slice))
+                    median_pip = np.median([x['pip'] for x in slice])
+                    median_peep = np.median([x['peep'] for x in slice])
                     # this one has the lowest variance of all the calcs, however,
                     # for some reason cpap detection takes a dip when I use it.
                     pressure_itime = calc_pressure_itime_from_front(vwd['t'], vwd['pressure'], median_pip, median_peep, .4)
@@ -386,14 +386,17 @@ class VFinalFeatureSet(V1FeatureSet):
                     window_max_idx = 0 if idx + 1 - self.var_window_max < 0 else idx + 1 - self.var_window_max
                     slice = pt_array[min_idx:idx+1]
                     slice_max = pt_array[window_max_idx:idx+1]
-                    tvi_var = var(map(lambda x: x['tvi'], slice))
-                    itime_var = var(map(lambda x: x['itime'], slice))
-                    maw_var = var(map(lambda x: x['maw'], slice))
-                    pressure_slice = map(lambda x: x['pressure_itime'], slice)
-                    max_pressure_slice = map(lambda x: x['pressure_itime'], slice_max)
-                    pressure_itime_var = var(filter(lambda x: x if x is not np.nan else None, pressure_slice))
-                    pressure_itime_var_longer = var(filter(lambda x: x if x is not np.nan else None, max_pressure_slice))
-                    itime_var_longer = var(map(lambda x: x['itime'], slice_max))
+
+                    itime_var_longer = var([x['itime'] for x in slice_max])
+                    tvi_var = var([x['tvi'] for x in slice])
+                    itime_var = var([x['itime'] for x in slice])
+                    maw_var = var([x['maw'] for x in slice])
+                    pressure_slice = [x['pressure_itime'] for x in slice]
+                    max_pressure_slice = [x['pressure_itime'] for x in slice_max]
+                    pressure_itime_var = np.nanvar(pressure_slice)
+                    pressure_itime_var_longer = np.nanvar(max_pressure_slice)
+                    itime_var_longer = var([x['itime'] for x in slice_max])
+
                 pt_array[idx].update({
                     'tvi_var': tvi_var,
                     'itime_var': itime_var,
@@ -558,8 +561,8 @@ class VFinalFeatureSet(V1FeatureSet):
                 flow_var_var.append(var(pt_flow_var_nan_filtered))
                 flow_slope_mean.append(np.mean(f_diffs))
                 pressure_var.append(var(p_diffs))
-                num_plats_past_20.append(sum(map(lambda x: 1 if x is True else 0, plat_detected[-20:])))
-                num_plats_past_40.append(sum(map(lambda x: 1 if x is True else 0, plat_detected[-40:])))
+                num_plats_past_20.append(sum(list(map(lambda x: 1 if x is True else 0, plat_detected[-20:]))))
+                num_plats_past_40.append(sum(list(map(lambda x: 1 if x is True else 0, plat_detected[-40:]))))
             x0_minus_1.extend(patient_x0_minus_arr)
             flow_var.extend(pt_flow_var)
 
@@ -670,7 +673,7 @@ class Murias(VFinalFeatureSet):
             try:
                 pt_vwd = self.extract_breath_info(filename)
             except Exception as err:
-                print "Error in runtime:\n\n{}\n\nskip file: {}".format(traceback.format_exc(), filename)
+                print("Error in runtime:\n\n{}\n\nskip file: {}".format(traceback.format_exc(), filename))
                 continue
             all_breath_vwd[filename] = pt_vwd
             pt_array = []
@@ -703,11 +706,11 @@ class Murias(VFinalFeatureSet):
                     # The 0, 1 calc here is
                     #
                     # sqrt((actual - mean)**2 / actual)
-                    tvi_slice = map(lambda x: x[5], slice)
+                    tvi_slice = list(map(lambda x: x[5], slice))
                     tvi_mean = sum(tvi_slice) / float(len(tvi_slice))
-                    itime_slice = map(lambda x: x[8], slice)
+                    itime_slice = list(map(lambda x: x[8], slice))
                     itime_mean = sum(itime_slice) / float(len(itime_slice))
-                    pip_slice = map(lambda x: x[9], slice)
+                    pip_slice = list(map(lambda x: x[9], slice))
                     pip_mean = sum(pip_slice) / float(len(pip_slice))
                     try:
                         tvi_var = math.sqrt((tvi_slice[-1] - tvi_mean) ** 2 / tvi_mean)
@@ -833,7 +836,7 @@ def get_x_random_patient_files_in_path(dir_, x):
 def get_random_file_in_dir(dir_):
     csv_files = glob("{}/*.csv".format(dir_))
     if len(csv_files) == 0:
-		return None
+        return None
     return csv_files[random.randint(0, len(csv_files) - 1)]
 
 
