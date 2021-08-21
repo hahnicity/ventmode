@@ -24,7 +24,7 @@ Clone the repo
 
 You should use anaconda for installing dependencies. [Install anaconda](https://docs.anaconda.com/anaconda/install/) then create a new environment.
 
-    conda create -n ventmode python=2.7
+    conda create -n ventmode python=3.8
     source activate ventmode
 
 There are a few packages must be installed using anaconda:
