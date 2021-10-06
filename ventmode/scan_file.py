@@ -12,7 +12,7 @@ from ventmode import datasets
 from ventmode.main import merge_periods_with_low_time_thresh, perform_lookahead_confidence_window, run_dataset_with_classifier
 
 
-def scan_file(filepath, cls_path, scaler_path, time_thresh):
+def scan_file(filepath, cls_path, scaler_path, time_thresh, ipython):
     fileset = {'x': [('cli', filepath)]}
     vfinal = datasets.VFinalFeatureSet(fileset, 10, 100)
 
@@ -35,6 +35,9 @@ def scan_file(filepath, cls_path, scaler_path, time_thresh):
         prev_mode = cur_mode
     else:
         print("mode: {}, breaths: {}-{}".format(map_[prev_mode], min(bn_count), max(bn_count)))
+    if ipython:
+        from IPython import embed
+        embed()
 
 
 def main():
@@ -43,10 +46,11 @@ def main():
     parser.add_argument('saved_classifier_path')
     parser.add_argument('saved_scaler_path')
     parser.add_argument('-t', '--time-thresh', type=int, default=4, help='if a ventmode period is below this amount of time merge it with the closest neightboring mode')
+    parser.add_argument('--ipython', action='store_true', help='drop into IPython shell at end of file run')
 
     args = parser.parse_args()
 
-    scan_file(args.vwd_file, args.saved_classifier_path, args.saved_scaler_path, args.time_thresh)
+    scan_file(args.vwd_file, args.saved_classifier_path, args.saved_scaler_path, args.time_thresh, args.ipython)
 
 
 if __name__ == "__main__":
