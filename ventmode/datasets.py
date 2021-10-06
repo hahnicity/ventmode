@@ -17,6 +17,7 @@ from os.path import basename
 import random
 import re
 import traceback
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -30,6 +31,9 @@ from ventmap.SAM import calc_pressure_itime_by_dyn_threshold, calc_pressure_itim
 
 from ventmode.dtw_lib import dtw_file_analyze
 from ventmode import constants
+
+pd.options.mode.chained_assignment = None
+warnings.simplefilter(action='ignore', category=RuntimeWarning)
 
 
 class V1FeatureSet(object):
