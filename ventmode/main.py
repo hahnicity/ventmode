@@ -551,8 +551,8 @@ class Run(object):
                 model = self.get_model(x_train, y_train)
                 model.fit(x_train, y_train)
                 if self.args.save_classifier_to:
-                    pickle.dump(model, open(self.args.save_classifier_to, 'w'))
-                    pickle.dump(self.scaler, open("{}.scaler".format(self.args.save_classifier_to), 'w'))
+                    pickle.dump(model, open(self.args.save_classifier_to, 'wb'))
+                    pickle.dump(self.scaler, open("{}.scaler".format(self.args.save_classifier_to), 'wb'))
                 if self.args.algo == 'rf' and not self.args.no_print_results:
                     print(zip(x_train.columns, model.feature_importances_))
                 if len(x_test) == 0:
@@ -730,7 +730,7 @@ def perform_lookahead_confidence_window(predictions, test_patients, window_len, 
         cur_patient = test_patients.loc[idx]  # takes 25.3% of time
         if cur_patient != last_patient:
             cur_patient_start_loc = idx
-            cur_patient_end_loc = test_patients[test_patients == cur_patient].iloc[-1].index
+            cur_patient_end_loc = test_patients[test_patients == cur_patient].index[-1]
         lookback_idx = idx - window_len if idx - window_len >= cur_patient_start_loc else cur_patient_start_loc
         window_items = predictions.loc[lookback_idx:idx]  # takes 54.2% of time
         val_counts = set(window_items.values)
@@ -857,7 +857,7 @@ def build_parser():
     parser.add_argument('--max-window-len', type=int, default=100, help='maximum length of variance window')
     parser.add_argument('--plot-conf-matrix', action='store_true', help='Plot a confusion matrix of the results')
     parser.add_argument("--save-classifier-to")
-    parser.add_argument('-sr', "--test-split-ratio", type=float, default=0.2)
+    parser.add_argument('-sr', "--test-split-ratio", type=float, default=0.2, help='ratio of patients to keep in test set. E.g. .2 => 20% of patients are in test set')
     parser.add_argument("--grid-search", action="store_true")
     parser.add_argument('--estimators', type=int, default=50, help='number of trees to use in the random forest')
     parser.add_argument('--train-on-all', action='store_true', help='Convert all data in frame to training data. Good for if you want to save the classifier after learning purposes')

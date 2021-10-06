@@ -5,7 +5,6 @@ scan_file
 Can be used to scan a file and output results of ventmode classifications
 """
 import argparse
-import pickle
 
 import pandas as pd
 
@@ -18,8 +17,8 @@ def scan_file(filepath, cls_path, scaler_path, time_thresh):
     vfinal = datasets.VFinalFeatureSet(fileset, 10, 100)
 
     df = vfinal.create_prediction_df()
-    cls = pickle.load(open(cls_path))
-    scaler = pickle.load(open(scaler_path))
+    cls = pd.read_pickle(cls_path)
+    scaler = pd.read_pickle(scaler_path)
     df = run_dataset_with_classifier(cls, scaler, df, "vfinal")
     map_ = {0: 'vc', 1: 'pc', 3: 'ps', 4: 'cpap', 6: 'pav'}
     df.predictions = perform_lookahead_confidence_window(df.predictions, df.patient, 30, .6)
