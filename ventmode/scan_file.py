@@ -5,11 +5,12 @@ scan_file
 Can be used to scan a file and output results of ventmode classifications
 """
 import argparse
+import sys
 
 import pandas as pd
 
 from ventmode import datasets
-from ventmode.main import merge_periods_with_low_time_thresh, perform_lookahead_confidence_window, run_dataset_with_classifier
+from ventmode.main import InvalidVMPatientError, merge_periods_with_low_time_thresh, perform_lookahead_confidence_window, run_dataset_with_classifier
 
 
 def scan_file(filepath, cls_path, scaler_path, time_thresh, ipython):
@@ -17,12 +18,19 @@ def scan_file(filepath, cls_path, scaler_path, time_thresh, ipython):
     vfinal = datasets.VFinalFeatureSet(fileset, 10, 100)
 
     df = vfinal.create_prediction_df()
+    if len(df) == 0:
+        print('Unable to extract data! Make sure your file has at least 10 breaths to analyze!')
+        sys.exit(2)
     cls = pd.read_pickle(cls_path)
     scaler = pd.read_pickle(scaler_path)
     df = run_dataset_with_classifier(cls, scaler, df, "vfinal")
     map_ = {0: 'vc', 1: 'pc', 3: 'ps', 4: 'cpap', 6: 'pav'}
     df.predictions = perform_lookahead_confidence_window(df.predictions, df.patient, 30, .6)
-    df.predictions = merge_periods_with_low_time_thresh(df.predictions, df.patient, df.abs_bs, pd.Timedelta(minutes=time_thresh))
+    try:
+        df.predictions = merge_periods_with_low_time_thresh(df.predictions, df.patient, df.abs_bs, pd.Timedelta(minutes=time_thresh))
+    # this happens in case there are too few breaths for lookbehind
+    except InvalidVMPatientError:
+        pass
 
     prev_mode = None
     bn_count = []
