@@ -23,9 +23,10 @@ import pandas as pd
 from scipy import mean, var
 from ventmap.breath_meta import get_production_breath_meta
 from ventmap.clear_null_bytes import clear_descriptor_null_bytes
+from ventmap.constants import EXPERIMENTAL_META_HEADER
 from ventmap.detection import detect_version_v2
 from ventmap.raw_utils import extract_raw
-from ventmap.SAM import calc_pressure_itime_by_dyn_threshold, calc_pressure_itime_by_pip, calc_pressure_itime_from_front, check_if_plat_occurs
+from ventmap.SAM import calc_pressure_itime_by_dyn_threshold, calc_pressure_itime_by_pip, calc_pressure_itime_from_front, check_if_plat_occurs, shear_transform
 
 from ventmode.dtw_lib import dtw_file_analyze
 from ventmode import constants
@@ -333,7 +334,7 @@ class VFinalFeatureSet(V1FeatureSet):
                 # worries, just take what we have available for the max
                 # var window.
                     median_pip, median_peep, pressure_itime = np.nan, np.nan, np.nan
-                    pressure_itime_dot5, pressure_itime_dot6, pressure_itime_dot65, pressure_itime_dot7 = np.nan, np.nan, np.nan, np.nan
+                    pressure_itime_dot4, pressure_itime_dot5, pressure_itime_dot6, pressure_itime_dot65, pressure_itime_dot7, pressure_itime_shear = np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
                 else:
                     if 't' not in vwd:
                         vwd['t'] = np.arange(0, len(vwd['pressure'])*0.02, 0.02)
@@ -347,24 +348,27 @@ class VFinalFeatureSet(V1FeatureSet):
                     median_peep = np.median([x['peep'] for x in slice])
                     # this one has the lowest variance of all the calcs, however,
                     # for some reason cpap detection takes a dip when I use it.
-                    pressure_itime = calc_pressure_itime_from_front(vwd['t'], vwd['pressure'], median_pip, median_peep, .4)
+                    pressure_itime_dot4 = calc_pressure_itime_from_front(vwd['t'], vwd['pressure'], median_pip, median_peep, .4)
                     pressure_itime_dot5 = calc_pressure_itime_from_front(vwd['t'], vwd['pressure'], median_pip, median_peep, .5)
                     pressure_itime_dot6 = calc_pressure_itime_from_front(vwd['t'], vwd['pressure'], median_pip, median_peep, .6)
                     pressure_itime_dot7 = calc_pressure_itime_from_front(vwd['t'], vwd['pressure'], median_pip, median_peep, .7)
                     pressure_itime_dot65 = calc_pressure_itime_from_front(vwd['t'], vwd['pressure'], median_pip, median_peep, .65)
+                    pressure_itime_shear = shear_transform(vwd['pressure'], vwd['flow'], vwd['dt']) * vwd['dt']
                     # this is one method of calculating pressure itime. it generally
                     # works very well and it resistant to noise on expiratory lim,
                     # however, if there is heavy noise on insp. lim this algo
                     # begins to lost a lot of precision.
                     #pressure_itime = calc_pressure_itime_by_dyn_threshold(vwd['t'], vwd['pressure'], median_pip, median_peep, .25)
                 pt_array[-1].update({
-                    'pressure_itime': pressure_itime,
+                    'pressure_itime': pressure_itime_shear,
                     'median_pip': median_pip,
                     'median_peep': median_peep,
+                    'pressure_itime_.4': pressure_itime_dot4,
                     'pressure_itime_.5': pressure_itime_dot5,
                     'pressure_itime_.6': pressure_itime_dot6,
                     'pressure_itime_.65': pressure_itime_dot65,
                     'pressure_itime_.7': pressure_itime_dot7,
+                    'pressure_itime_shear': pressure_itime_shear,
                 })
             if vwd_remove_idxs:
                 all_breath_vwd[filename] = [

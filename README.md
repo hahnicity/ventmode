@@ -24,32 +24,14 @@ Clone the repo
 
 You should use anaconda for installing dependencies. [Install anaconda](https://docs.anaconda.com/anaconda/install/) then create a new environment.
 
-    conda create -n ventmode python=3.8
-    source activate ventmode
-
-There are a few packages must be installed using anaconda:
-
-    conda install matplotlib seaborn numpy scipy pandas scikit-learn cython
-
-If your system support pytorch and you want to try using the LSTM code then you will need
-to install pytorch
-
-    conda install pytorch
-
-Install dtw libs and go back to ventmode
-
-    git clone https://github.com/lukauskas/dtwco
-    cd dtwco
+    cd ventmode
+    conda env create -f environment.yml
     pip install -e .
-    cd ../ventmode
-
-Then install the rest via pip
-
-    python setup.py develop
 
 ## Reproducing Work
 You can reproduce the work we've done by running a bash script.
 
+    git checkout reproduction_tag
     cd ventmode
     ./experiments.sh
 
