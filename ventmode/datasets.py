@@ -324,7 +324,7 @@ class VFinalFeatureSet(V1FeatureSet):
                     'maxp': maxp,
                     'ipauc': ipauc,
                     'epauc': epauc,
-                    'ipauc:epauc': ipauc / epauc,
+                    'ipauc:epauc': ipauc / epauc if epauc != 0 else np.inf,
                     'pip': pip,
                     'maw': maw,
                     'peep': peep,
